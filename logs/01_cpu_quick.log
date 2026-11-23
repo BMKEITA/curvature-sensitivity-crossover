@@ -1,0 +1,157 @@
+Config : {'mode': 'single', 'features': '', 'n': 4000, 'd': 128, 'c': 10, 'decay': 3.0, 'gamma': 0.01, 'delta': 1e-05, 'nus': [0.5, 2, 8, 32], 'nus2': [1, 4, 16, 64], 'eps': [4, 64], 'eps_dp': 4.0, 'mults': [0.5, 2], 'seeds': 4, 'n_rand': 6, 'n_high': 6, 'npub': 300, 'nte': 1000, 'nval': 300, 'alpha': 0.05, 'levels': [0.075, 0.1, 0.15, 0.25, 0.4], 'min_test': 0.1, 'prim_rand': 0.1, 'prim_high': 0.25, 'B': 100, 'ks': [1, 2, 4], 'seq_nt': 3, 'seq_stratum': 'rand', 'seq_nus': [2, 8], 'seq_nus2': [4, 16], 'seq_eps': [4, 64], 'adjacency': 'remove', 'grid_mode': 'wide', 'quick': True}
+  graine 1/4 terminee (1 s)
+  graine 2/4 terminee (2 s)
+  graine 3/4 terminee (3 s)
+  graine 4/4 terminee (4 s)
+
+=== fu_v4_3 v5 single (features=synthetique, gamma=0.01, delta=1e-05, 4 graines, n=4000, d=128, c=10, Vt_mean=1.815) ===
+exactitude de W1 exact (test) : 79.12 %
+||dW_i||/mediane : p50=1.00 p90=2.19 p99=3.86 max=7.92
+Diagnostic : energie de dW dans la moitie a faible variance = 0.802 ; variance de prediction aniso/iso = 0.001
+alpha=0.05 ; FUITE = max sur mf_ex, mf_pub, wf_ex ; hasard ~ 0.05 (+~0.007 pour le max de 3)
+   B eps=4 : sigma=1.53 ; m choisi moyen=0.500 ; repartition={0.5: 4}
+   B eps=64 : sigma=0.179 ; m choisi moyen=0.500 ; repartition={0.5: 4}
+   m aux bornes de la grille : bas 100%, haut 0%
+
+[REV 2] WARNING: using narrow grid (ν₂ ≤ 6400). A2 will be CENSORED on MNIST high at k=10 (frontier does not reach TPR=0.10 at any ν₂ in the grid). Reported values are LOWER BOUNDS.
+  To obtain the un-censored results reported in the paper, use --grid_mode wide (ν₂ ≤ 19200).
+
+######## suppressions aleatoires (n=24 rangs/config ; KS crit 5 % non corrige ~ 0.278) ########
+config                 |  mf_ex mf_pub  wf_ex |  f5(max3)   f1   KS3 | rec_ex rec_pb  pl_ex  pl_pb | cos_exc | cout (pt)
+A  iso   nu=0          |  1.000  1.000  1.000 |   1.000  1.000 0.992 |  1.000  0.917  0.125  0.125 |   0.382 |    +0.00
+A  iso   nu=0.5        |  1.000  1.000  0.375 |   1.000  1.000 0.992 |  0.000  0.000  0.000  0.000 |   0.062 |    +0.06
+A  iso   nu=2          |  1.000  1.000  0.167 |   1.000  1.000 0.992 |  0.250  0.208  0.042  0.042 |   0.037 |    +0.09
+A  iso   nu=8          |  0.750  0.583  0.083 |   0.750  0.583 0.730 |  0.042  0.042  0.083  0.042 |   0.029 |    +5.80
+A  iso   nu=32         |  0.208  0.125  0.042 |   0.208  0.000 0.346 |  0.083  0.083  0.042  0.000 |   0.008 |   +47.09
+A2 aniso nu=1          |  1.000  1.000  1.000 |   1.000  1.000 0.992 |  0.917  0.708  0.083  0.083 |   0.375 |    -0.01
+A2 aniso nu=4          |  0.833  0.792  1.000 |   1.000  1.000 0.991 |  0.292  0.000  0.000  0.042 |   0.129 |    +0.09
+A2 aniso nu=16         |  0.500  0.500  0.708 |   0.708  0.458 0.729 |  0.125  0.083  0.083  0.042 |   0.039 |    +0.05
+A2 aniso nu=64         |  0.208  0.125  0.250 |   0.250  0.083 0.313 |  0.083  0.042  0.083  0.000 |   0.040 |    +0.35
+B  DP    eps=4         |  0.000  0.083  0.083 |   0.083  0.000 0.156 |  0.125  0.000  0.083  0.083 |  -0.060 |    +0.18
+B  DP    eps=64        |  0.042  0.083  0.042 |   0.083  0.042 0.155 |  0.000  0.000  0.042  0.042 |   0.023 |    -0.33
+   Fuite NETTE de reconstruction (rec - placebo), IC95 sur graines :
+      A  bruit iso        : rec_ex +0.052 [-0.010;+0.083]   rec_pub +0.062 [+0.042;+0.083]
+      A2 bruit aniso      : rec_ex +0.292 [+0.177;+0.385]   rec_pub +0.167 [+0.083;+0.250]
+      B  DP eps<=eps_dp   : rec_ex +0.042 [+0.000;+0.125]   rec_pub -0.083 [-0.250;+0.000]
+
+######## suppressions a fort levier (top 1 %) (n=24 rangs/config ; KS crit 5 % non corrige ~ 0.278) ########
+config                 |  mf_ex mf_pub  wf_ex |  f5(max3)   f1   KS3 | rec_ex rec_pb  pl_ex  pl_pb | cos_exc | cout (pt)
+A  iso   nu=0          |  1.000  1.000  1.000 |   1.000  0.750 0.985 |  1.000  0.167  0.042  0.042 |   0.664 |    +0.00
+A  iso   nu=0.5        |  1.000  1.000  0.958 |   1.000  0.750 0.985 |  0.250  0.208  0.417  0.375 |  -0.321 |    +0.05
+A  iso   nu=2          |  1.000  1.000  0.750 |   1.000  0.750 0.985 |  0.250  0.250  0.250  0.250 |  -0.308 |    -0.02
+A  iso   nu=8          |  1.000  1.000  0.375 |   1.000  0.750 0.985 |  0.208  0.167  0.250  0.250 |  -0.239 |    +6.62
+A  iso   nu=32         |  0.417  0.375  0.458 |   0.458  0.167 0.632 |  0.000  0.000  0.125  0.125 |  -0.243 |   +49.38
+A2 aniso nu=1          |  1.000  1.000  1.000 |   1.000  0.750 0.985 |  1.000  0.208  0.000  0.083 |   0.630 |    +0.00
+A2 aniso nu=4          |  1.000  1.000  1.000 |   1.000  0.750 0.985 |  0.708  0.208  0.000  0.042 |   0.375 |    +0.01
+A2 aniso nu=16         |  1.000  0.958  1.000 |   1.000  0.750 0.985 |  0.042  0.083  0.042  0.042 |  -0.139 |    -0.03
+A2 aniso nu=64         |  0.458  0.292  0.417 |   0.458  0.167 0.702 |  0.083  0.000  0.250  0.083 |  -0.203 |    +0.24
+B  DP    eps=4         |  0.042  0.083  0.042 |   0.083  0.000 0.389 |  0.125  0.125  0.083  0.083 |   0.009 |    +0.13
+B  DP    eps=64        |  0.083  0.125  0.208 |   0.208  0.000 0.337 |  0.250  0.000  0.083  0.083 |   0.033 |    -0.35
+   Fuite NETTE de reconstruction (rec - placebo), IC95 sur graines :
+      A  bruit iso        : rec_ex -0.083 [-0.146;+0.010]   rec_pub -0.094 [-0.146;-0.021]
+      A2 bruit aniso      : rec_ex +0.385 [+0.333;+0.458]   rec_pub +0.062 [+0.000;+0.125]
+      B  DP eps<=eps_dp   : rec_ex +0.042 [-0.083;+0.167]   rec_pub +0.042 [-0.125;+0.167]
+
+Plage de fuite lissee (max de 3 attaques) couverte par la grille de chaque famille :
+   suppressions aleatoires
+      A  bruit iso        : [0.208 ; 1.000]
+      A2 bruit aniso      : [0.250 ; 1.000]
+      B  DP eps<=eps_dp   : [0.083 ; 0.083]
+      B  DP tous eps      : [0.083 ; 0.083]
+   suppressions a fort levier (top 1 %)
+      A  bruit iso        : [0.458 ; 1.000]
+      A2 bruit aniso      : [0.458 ; 1.000]
+      B  DP eps<=eps_dp   : [0.083 ; 0.083]
+      B  DP tous eps      : [0.083 ; 0.208]
+
+######## Frontieres interpolees : suppressions aleatoires ########
+cout (pt) a fuite FIXEE ; 'cens.' = niveau non atteint ; 'n/d' = defini dans < 50 % des replicats
+
+-- fuite <= 0.075  (DESCRIPTIF : proche du plancher, aucun test)
+   A  bruit iso        :     n/d                                (defini dans 0 % des replicats)
+   A2 bruit aniso      :     n/d                                (defini dans 8 % des replicats)
+   B  DP eps<=eps_dp   :     n/d                                (defini dans 21 % des replicats)
+   B  DP tous eps      :     n/d                                (defini dans 33 % des replicats)
+
+-- fuite <= 0.1  (PRIMAIRE)
+   A  bruit iso        :     n/d                                (defini dans 6 % des replicats)
+   A2 bruit aniso      :     n/d                                (defini dans 16 % des replicats)
+   B  DP eps<=eps_dp   :     n/d                                (defini dans 38 % des replicats)
+   B  DP tous eps      :     n/d                                (defini dans 47 % des replicats)
+   H3 : A2 < A           : non testable (comparaison censuree)
+   H4 : B(eps<=4) < A    : non testable (comparaison censuree)
+   H5 : B(eps<=4) < A2   : non testable (comparaison censuree)
+
+-- fuite <= 0.15
+   A  bruit iso        :     n/d                                (defini dans 18 % des replicats)
+   A2 bruit aniso      :     n/d                                (defini dans 22 % des replicats)
+   B  DP eps<=eps_dp   :   +0.18 pt      [-0.09 ; +0.40]  (defini dans 61 % des replicats)
+   B  DP tous eps      :   -0.33 pt      [-0.56 ; -0.05]  (defini dans 85 % des replicats)
+   H3 : A2 < A           : non testable (comparaison censuree)
+   H4 : B(eps<=4) < A    : non testable (comparaison censuree)
+   H5 : B(eps<=4) < A2   : non testable (comparaison censuree)
+
+-- fuite <= 0.25
+   A  bruit iso        :  +41.21 pt    [+24.19 ; +51.64]  (defini dans 64 % des replicats)
+   A2 bruit aniso      :   +0.35 pt      [+0.09 ; +0.50]  (defini dans 53 % des replicats)
+   B  DP eps<=eps_dp   :   +0.18 pt      [-0.07 ; +0.40]  (defini dans 92 % des replicats)
+   B  DP tous eps      :   -0.33 pt      [-0.63 ; -0.05]  (defini dans 97 % des replicats)
+   H3 : A2 < A           : non testable (comparaison censuree)
+   H4 : B(eps<=4) < A    : cout(Y)-cout(X) = +41.03 pt [+24.77 ; +51.40] ; p unilateral = 0.0159 (62 % valides)
+   H5 : B(eps<=4) < A2   : cout(Y)-cout(X) = +0.17 pt [-0.18 ; +0.51] ; p unilateral = 0.1731 (51 % valides)
+
+-- fuite <= 0.4
+   A  bruit iso        :  +26.06 pt    [+15.61 ; +46.02]  (defini dans 94 % des replicats)
+   A2 bruit aniso      :   +0.22 pt      [+0.01 ; +0.37]  (defini dans 84 % des replicats)
+   B  DP eps<=eps_dp   :   +0.18 pt      [-0.09 ; +0.40]  (defini dans 99 % des replicats)
+   B  DP tous eps      :   -0.33 pt      [-0.67 ; -0.04]  (defini dans 100 % des replicats)
+   H3 : A2 < A           : cout(Y)-cout(X) = +25.84 pt [+16.28 ; +41.84] ; p unilateral = 0.0122 (81 % valides)
+   H4 : B(eps<=4) < A    : cout(Y)-cout(X) = +25.88 pt [+15.59 ; +45.79] ; p unilateral = 0.0106 (93 % valides)
+   H5 : B(eps<=4) < A2   : cout(Y)-cout(X) = +0.04 pt [-0.20 ; +0.36] ; p unilateral = 0.4353 (84 % valides)
+
+######## Frontieres interpolees : suppressions a fort levier (top 1 %) ########
+cout (pt) a fuite FIXEE ; 'cens.' = niveau non atteint ; 'n/d' = defini dans < 50 % des replicats
+
+-- fuite <= 0.075  (DESCRIPTIF : proche du plancher, aucun test)
+   A  bruit iso        :     n/d                                (defini dans 0 % des replicats)
+   A2 bruit aniso      :     n/d                                (defini dans 0 % des replicats)
+   B  DP eps<=eps_dp   :     n/d                                (defini dans 21 % des replicats)
+   B  DP tous eps      :     n/d                                (defini dans 21 % des replicats)
+
+-- fuite <= 0.1
+   A  bruit iso        :     n/d                                (defini dans 0 % des replicats)
+   A2 bruit aniso      :     n/d                                (defini dans 0 % des replicats)
+   B  DP eps<=eps_dp   :   +0.13 pt      [-0.10 ; +0.50]  (defini dans 50 % des replicats)
+   B  DP tous eps      :   +0.03 pt      [-0.62 ; +0.26]  (defini dans 50 % des replicats)
+   H3 : A2 < A           : non testable (comparaison censuree)
+   H4 : B(eps<=4) < A    : non testable (comparaison censuree)
+   H5 : B(eps<=4) < A2   : non testable (comparaison censuree)
+
+-- fuite <= 0.15
+   A  bruit iso        :     n/d                                (defini dans 0 % des replicats)
+   A2 bruit aniso      :     n/d                                (defini dans 0 % des replicats)
+   B  DP eps<=eps_dp   :   +0.13 pt      [-0.16 ; +0.53]  (defini dans 76 % des replicats)
+   B  DP tous eps      :   -0.18 pt      [-0.50 ; +0.14]  (defini dans 79 % des replicats)
+   H3 : A2 < A           : non testable (comparaison censuree)
+   H4 : B(eps<=4) < A    : non testable (comparaison censuree)
+   H5 : B(eps<=4) < A2   : non testable (comparaison censuree)
+
+-- fuite <= 0.25  (PRIMAIRE)
+   A  bruit iso        :     n/d                                (defini dans 0 % des replicats)
+   A2 bruit aniso      :     n/d                                (defini dans 9 % des replicats)
+   B  DP eps<=eps_dp   :   +0.13 pt      [-0.26 ; +0.54]  (defini dans 99 % des replicats)
+   B  DP tous eps      :   -0.35 pt      [-0.56 ; +0.00]  (defini dans 99 % des replicats)
+   H3 : A2 < A           : non testable (comparaison censuree)
+   H4 : B(eps<=4) < A    : non testable (comparaison censuree)
+   H5 : B(eps<=4) < A2   : non testable (comparaison censuree)
+
+-- fuite <= 0.4
+   A  bruit iso        :     n/d                                (defini dans 7 % des replicats)
+   A2 bruit aniso      :     n/d                                (defini dans 29 % des replicats)
+   B  DP eps<=eps_dp   :   +0.13 pt      [-0.26 ; +0.54]  (defini dans 100 % des replicats)
+   B  DP tous eps      :   -0.35 pt      [-0.61 ; -0.06]  (defini dans 100 % des replicats)
+   H3 : A2 < A           : non testable (comparaison censuree)
+   H4 : B(eps<=4) < A    : non testable (comparaison censuree)
+   H5 : B(eps<=4) < A2   : non testable (comparaison censuree)
+
+-- Holm-Bonferroni correction across 0 primary hypothesis tests (rand: 0.1; high: 0.25)
