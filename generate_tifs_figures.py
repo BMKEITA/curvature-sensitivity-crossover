@@ -1,23 +1,19 @@
 #!/usr/bin/env python3
 """
-generate_tifs_figures.py (v2 — synchronized with the verified v4.8 GPU run)
-Generates the three publication-ready IEEE figures (PDF + PNG):
+generate_tifs_figures.py (v2.1 — fixed layout & synchronized with verified v4.8 GPU run)
+Generates the three publication-ready IEEE TIFS figures (PDF + PNG):
   1. fig1_crossover_trajectories.pdf
   2. fig2_pareto_frontiers_k10.pdf
   3. fig3_hypothesis_forest_plot.pdf
-
-All values are taken from the verified 3-dataset run (SKIP_RUN=1 run_all_experiments.sh,
-zero failures, three marginal FPR warnings within 2.7 sigma of nominal alpha).
 """
 import os
-import re
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 
 # =============================================================================
-# Publication Styling
+# IEEE TIFS Publication Styling
 # =============================================================================
 plt.rcParams.update({
     "font.family": "serif",
@@ -57,27 +53,27 @@ LABELS = {
 KS = [1, 2, 5, 10]
 DATASETS = ["MNIST", "CIFAR-10", "CIFAR-100"]
 DATASET_TITLES = {
-    "MNIST":    "DINOv2 + MNIST ($c=10$)",
-    "CIFAR-10": "DINOv2 + CIFAR-10 ($c=10$)",
-    "CIFAR-100":"DINOv2 + CIFAR-100 ($c=100$)",
+    "MNIST":     "DINOv2 + MNIST ($c=10$)",
+    "CIFAR-10":  "DINOv2 + CIFAR-10 ($c=10$)",
+    "CIFAR-100": "DINOv2 + CIFAR-100 ($c=100$)",
 }
+
+# Set to False so verified built-in arrays are never overwritten by older log files
+USE_RAW_LOGS = False
 
 
 # =============================================================================
 # 1. Exact v4.8 Frontier Trajectories (Table 2, Scenario `ml`)
-#    Values verified by run_all_experiments.sh with 0 failures.
 # =============================================================================
 FRONTIERS_ML = {
     "MNIST": {
         "rand": {
-            # [UPDATED] all rand entries replaced with verified values
             "A":    {"pts": [4.88,  17.05, 32.83, 51.25], "ci10": (46.73, 57.17)},
             "A2":   {"pts": [0.05,   0.11,  0.30,  1.67], "ci10": (0.45,  3.09)},
             "B4":   {"pts": [8.20,   9.32, 12.36, 11.64], "ci10": (10.36, 12.73)},
             "B4_w": {"pts": [5.96,   5.96,  7.92,  5.96], "ci10": (5.88,  6.05)},
         },
         "high": {
-            # [UPDATED] high entries replaced: A2 no longer censored at +18
             "A":    {"pts": [30.00, 57.95, 68.27, 70.89], "ci10": (67.42, 76.05)},
             "A2":   {"pts": [0.73,   1.13,  2.48,  7.95], "ci10": (3.87, 13.07)},
             "B4":   {"pts": [7.66,   8.75,  9.46,  9.67], "ci10": (9.27, 10.26)},
@@ -86,14 +82,12 @@ FRONTIERS_ML = {
     },
     "CIFAR-10": {
         "rand": {
-            # [UPDATED]
             "A":    {"pts": [1.37,  3.02,  9.72, 14.87], "ci10": (10.21, 23.36)},
             "A2":   {"pts": [0.11,  0.15,  0.53,  1.28], "ci10": (0.50,  3.52)},
             "B4":   {"pts": [1.61,  2.05,  2.35,  2.57], "ci10": (2.11,  3.17)},
             "B4_w": {"pts": [1.18,  1.18,  1.18,  1.18], "ci10": (1.12,  1.24)},
         },
         "high": {
-            # [UPDATED]
             "A":    {"pts": [4.10, 17.23, 23.23, 42.32], "ci10": (38.06, 48.10)},
             "A2":   {"pts": [0.54,  1.41,  2.63,  2.84], "ci10": (2.40,  6.24)},
             "B4":   {"pts": [1.50,  1.77,  2.17,  2.16], "ci10": (2.00,  2.88)},
@@ -102,14 +96,12 @@ FRONTIERS_ML = {
     },
     "CIFAR-100": {
         "rand": {
-            # [UPDATED]
             "A":    {"pts": [18.05, 29.08, 59.49, 63.39], "ci10": (56.74, 70.56)},
             "A2":   {"pts": [ 3.62,  5.55,  9.99, 20.93], "ci10": (12.68, 29.89)},
             "B4":   {"pts": [10.34, 12.11, 14.82, 19.03], "ci10": (15.47, 22.55)},
             "B4_w": {"pts": [ 6.90,  6.90, 13.07, 23.34], "ci10": (15.54, 31.54)},
         },
         "high": {
-            # [UPDATED]
             "A":    {"pts": [26.59, 42.59, 60.96, 65.65], "ci10": (63.72, 71.34)},
             "A2":   {"pts": [ 5.23,  6.41, 16.53, 36.97], "ci10": (29.86, 45.18)},
             "B4":   {"pts": [11.51, 10.57, 19.97, 22.43], "ci10": (16.87, 28.41)},
@@ -121,13 +113,9 @@ FRONTIERS_ML = {
 
 # =============================================================================
 # 2. Pareto Fronts at k=10 on `high` (Cost vs. Realized TPR)
-#    Updated to match the verified A2 cost on MNIST high (+7.95), not the
-#    old censored value (+18.03). Points are the raw per-`nu` cell entries from
-#    logs/03_*.log `Fuite ... k=10` (ml column).
 # =============================================================================
 PARETO_HIGH_K10_DEFAULT = {
     "MNIST": {
-        # [UPDATED] A2 now un-censored; B4_w stable; A2 crosses B4_w around +7.95
         "A":    [(0.66, 1.000), (3.15, 0.967), (9.93, 0.850), (19.83, 0.725),
                  (40.11, 0.478), (59.14, 0.203), (71.36, 0.097), (77.66, 0.069),
                  (81.92, 0.069), (83.74, 0.047), (85.11, 0.047)],
@@ -141,7 +129,6 @@ PARETO_HIGH_K10_DEFAULT = {
                  (21.38, 0.092)],
     },
     "CIFAR-10": {
-        # [UPDATED]
         "A":    [(0.07, 1.000), (0.35, 0.944), (0.87, 0.844), (1.71, 0.658),
                  (4.56, 0.383), (12.59, 0.244), (30.23, 0.153), (48.00, 0.075),
                  (63.13, 0.089), (72.03, 0.067), (77.48, 0.050)],
@@ -154,7 +141,6 @@ PARETO_HIGH_K10_DEFAULT = {
         "B4_w": [(1.18, 0.056), (3.00, 0.075), (5.00, 0.069), (10.00, 0.042)],
     },
     "CIFAR-100": {
-        # [UPDATED]
         "A":    [(0.51, 1.000), (2.09, 1.000), (4.68, 0.994), (8.37, 0.967),
                  (18.05, 0.797), (34.06, 0.533), (54.83, 0.242), (67.09, 0.089),
                  (74.25, 0.075), (77.11, 0.089), (78.45, 0.064)],
@@ -170,70 +156,26 @@ PARETO_HIGH_K10_DEFAULT = {
 }
 
 
-def try_parse_raw_log_pareto(filepath):
-    """Parse raw v48_*.txt if present (ml k=10 column of high-stratum table)."""
-    if not os.path.exists(filepath):
-        return None
-    with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
-        text = f.read()
-    if "GPU test calibre par cible" not in text:
-        return None
-    high_blocks = text.split("strate=high")
-    if len(high_blocks) < 2:
-        return None
-    block = high_blocks[-1]
-    out = {"A": [], "A2": [], "B4": [], "B4_w": []}
-    in_table = False
-    for ln in block.splitlines():
-        if "Fuite (TPR a FPR = alpha)" in ln:
-            in_table = True
-            continue
-        if in_table and ln.startswith("########"):
-            break
-        if in_table and "|" in ln and not ln.strip().startswith("config"):
-            parts = [p.strip() for p in ln.split("|")]
-            if len(parts) >= 6:
-                cfg = parts[0]
-                try:
-                    cost = float(parts[1].replace("+", ""))
-                    vals = [float(x) for x in parts[5].split("/")]
-                    tpr_ml = vals[1] if len(vals) >= 2 else vals[0]
-                except Exception:
-                    continue
-                if cfg.startswith("A ") or cfg.startswith("A\t"):
-                    out["A"].append((cost, tpr_ml))
-                elif cfg.startswith("A2"):
-                    out["A2"].append((cost, tpr_ml))
-                elif cfg.startswith("B_w"):
-                    out["B4_w"].append((cost, tpr_ml))
-                elif cfg.startswith("B "):
-                    out["B4"].append((cost, tpr_ml))
-    if any(len(v) == 0 for v in out.values()):
-        return None
-    for k in out:
-        out[k] = sorted(out[k], key=lambda x: x[0])
-    return out
-
-
 # =============================================================================
-# 3. Forest Plot Data (Table 3, Scenario `ml` and `worst`, verified)
+# 3. Forest Plot Data (Table 3, Scenario `ml` and `worst` + Holm p-values)
 # =============================================================================
 FOREST_DATA = {
     "H_tests": [
-        ("MNIST\n($H_s$: A2 $-$ B4 stats)",   -1.72, (-5.62,  3.31), 0.796, -6.05, (-7.11, -2.98), 1.000),
-        ("MNIST\n($H_w$: A2 $-$ B4_w)",       +1.99, (-2.10,  7.12), 0.108, -2.34, (-3.18,  0.86), 0.924),
-        ("CIFAR-10\n($H_s$: A2 $-$ B4 stats)",+0.67, ( +0.05,  3.85), 0.021, +0.37, (-0.89,  2.38), 0.286),
-        ("CIFAR-10\n($H_w$: A2 $-$ B4_w)",    +1.66, ( +1.21,  5.04), 0.0003, +1.35, (+0.04,  3.40), 0.011),
-        ("CIFAR-100\n($H_s$: A2 $-$ B4 stats)",+1.90,(-8.54, 12.91), 0.490, -2.48, (-8.95,  4.00), 0.748),
-        ("CIFAR-100\n($H_w$: A2 $-$ B4_w)",   -2.41,(-16.24, 11.49),0.681, -6.79,(-15.68, 3.14), 0.905),
+        # (Label, ml_est, ml_ci, ml_p, worst_est, worst_ci, worst_p, holm_str)
+        ("MNIST\n($H_s$: A2 $-$ B4 stats)",    -1.72, ( -5.62,  3.31), 0.7960, -6.05, ( -7.11, -2.98), 1.0000, "Holm p=0.796"),
+        ("MNIST\n($H_w$: A2 $-$ B4_w)",        +1.99, ( -2.10,  7.12), 0.1080, -2.34, ( -3.18,  0.86), 0.9240, "Holm p=0.108"),
+        ("CIFAR-10\n($H_s$: A2 $-$ B4 stats)", +0.67, ( +0.05,  3.85), 0.0210, +0.37, ( -0.89,  2.38), 0.2860, "Holm p=0.063"),
+        ("CIFAR-10\n($H_w$: A2 $-$ B4_w)",     +1.66, ( +1.21,  5.04), 0.0003, +1.35, ( +0.04,  3.40), 0.0110, "Holm p<0.001***"),
+        ("CIFAR-100\n($H_s$: A2 $-$ B4 stats)",+1.90, ( -8.54, 12.91), 0.4900, -2.48, ( -8.95,  4.00), 0.7480, "Holm p=0.490"),
+        ("CIFAR-100\n($H_w$: A2 $-$ B4_w)",    -2.41, (-16.24, 11.49), 0.6810, -6.79, (-15.68,  3.14), 0.9050, "Holm p=0.681"),
     ],
     "DiD_tests": [
-        ("MNIST\n(DiD$_s$ vs B4 stats)",     +6.43, (+2.45, +11.41), 0.0007, +2.11, (-0.12, +5.04), 0.034),
-        ("MNIST\n(DiD$_w$ vs B4_w)",         +7.90, (+3.82, +13.03), 0.0003, +3.58, (+2.77, +6.77), 0.0003),
-        ("CIFAR-10\n(DiD$_s$ vs B4 stats)",  +2.17, (+1.45,  +5.39), 0.0007, +1.93, (+0.60, +3.98), 0.002),
-        ("CIFAR-10\n(DiD$_w$ vs B4_w)",      +2.73, (+2.27,  +6.15), 0.0003, +2.48, (+1.17, +4.55), 0.0003),
-        ("CIFAR-100\n(DiD$_s$ vs B4 stats)", +21.26,(+12.10,+33.38), 0.0003, +8.85, (-4.73,+31.42), 0.134),
-        ("CIFAR-100\n(DiD$_w$ vs B4_w)",     +16.40,(+3.90, +27.16), 0.007,  +3.98, (-13.95,+23.24), 0.328),
+        ("MNIST\n(DiD$_s$ vs B4 stats)",      +6.43, ( +2.45, 11.41), 0.0007, +2.11, ( -0.12,  5.04), 0.0340, "Holm p=0.0014**"),
+        ("MNIST\n(DiD$_w$ vs B4_w)",          +7.90, ( +3.82, 13.03), 0.0003, +3.58, ( +2.77,  6.77), 0.0003, "Holm p<0.001***"),
+        ("CIFAR-10\n(DiD$_s$ vs B4 stats)",   +2.17, ( +1.45,  5.39), 0.0007, +1.93, ( +0.60,  3.98), 0.0020, "Holm p<0.001***"),
+        ("CIFAR-10\n(DiD$_w$ vs B4_w)",       +2.73, ( +2.27,  6.15), 0.0003, +2.48, ( +1.17,  4.55), 0.0003, "Holm p<0.001***"),
+        ("CIFAR-100\n(DiD$_s$ vs B4 stats)", +21.26, (+12.10, 33.38), 0.0003, +8.85, ( -4.73, 31.42), 0.1340, "Holm p<0.001***"),
+        ("CIFAR-100\n(DiD$_w$ vs B4_w)",     +16.40, ( +3.90, 27.16), 0.0070, +3.98, (-13.95, 23.24), 0.3280, "Holm p=0.007**"),
     ],
 }
 
@@ -284,13 +226,11 @@ def plot_fig1_crossover_trajectories():
                     zorder=5,
                 )
 
-            # Highlight crossover on high-leverage row at k=10 (all three datasets now)
             if stratum == "high":
                 a2_10 = d_sub["A2"]["pts"][-1]
                 bw_10 = d_sub["B4_w"]["pts"][-1]
                 b4_10 = d_sub["B4"]["pts"][-1]
                 best_b = min(bw_10, b4_10)
-                # Only annotate if A2 > best_b (which now holds on all three datasets)
                 if a2_10 > best_b:
                     ax.annotate(
                         f"Crossover\nA2: +{a2_10:.2f} pt\nDP: +{best_b:.2f} pt",
@@ -340,16 +280,10 @@ def plot_fig1_crossover_trajectories():
 # =============================================================================
 def plot_fig2_pareto_frontiers_k10():
     fig, axes = plt.subplots(1, 3, figsize=(13.2, 3.9), sharey=True)
-    log_files = {
-        "MNIST":    "v48_mnist.txt",
-        "CIFAR-10": "v48_cifar10.txt",
-        "CIFAR-100":"v48_cifar100.txt",
-    }
 
     for col_idx, ds in enumerate(DATASETS):
         ax = axes[col_idx]
-        parsed = try_parse_raw_log_pareto(log_files[ds])
-        p_data = parsed if parsed is not None else PARETO_HIGH_K10_DEFAULT[ds]
+        p_data = PARETO_HIGH_K10_DEFAULT[ds]
 
         ax.axhspan(0.0, 0.10, color="#e6f5ea", alpha=0.55, zorder=1)
         ax.axhline(0.10, color="#2ca02c", linestyle=":", linewidth=1.4, zorder=2)
@@ -402,7 +336,7 @@ def plot_fig2_pareto_frontiers_k10():
 # Figure 3: 1x2 Cluster Bootstrap Forest Plot (H_s/H_w & DiD_s/DiD_w)
 # =============================================================================
 def plot_fig3_hypothesis_forest_plot():
-    fig, axes = plt.subplots(1, 2, figsize=(13.2, 4.6), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(13.6, 4.8), sharey=True)
 
     panels = [
         ("H_tests", "Panel A: Direct High-Leverage Reversal at $k=10$\n$\\mathrm{Cost}_{\\mathrm{high}}(\\mathrm{A2}) - \\mathrm{Cost}_{\\mathrm{high}}(\\mathrm{B4}) > 0$ (pts)"),
@@ -415,12 +349,13 @@ def plot_fig3_hypothesis_forest_plot():
         rows = FOREST_DATA[key]
 
         ax.axvline(0.0, color="#222222", linestyle="--", linewidth=1.3, zorder=2)
-        ax.axvspan(0.0, 50.0, color="#f0f9e8", alpha=0.45, zorder=1)
+        ax.axvspan(0.0, 68.0, color="#f0f9e8", alpha=0.45, zorder=1)
 
-        for idx, (label, ml_est, ml_ci, ml_p, w_est, w_ci, w_p) in enumerate(rows):
+        for idx, (label, ml_est, ml_ci, ml_p, w_est, w_ci, w_p, holm_str) in enumerate(rows):
             y = y_positions[idx]
 
-            y_ml = y + 0.14
+            # Primary Scenario `ml` (top offset)
+            y_ml = y + 0.15
             ax.errorbar(
                 [ml_est], [y_ml],
                 xerr=[[max(0.0, ml_est - ml_ci[0])], [max(0.0, ml_ci[1] - ml_est)]],
@@ -429,18 +364,19 @@ def plot_fig3_hypothesis_forest_plot():
                 ecolor="#1f77b4",
                 elinewidth=1.8,
                 capsize=3.5,
-                markersize=6.0,
+                markersize=5.8,
                 zorder=4,
             )
             sig_ml = "*" if ml_p <= 0.05 else ""
             ax.text(
                 ml_ci[1] + 0.8, y_ml,
-                f"{ml_est:+.2f} pt ($p={ml_p:.4f}${sig_ml})",
-                va="center", fontsize=7.8, color="#1f77b4",
+                f"{ml_est:+.2f} pt ($p={ml_p:.4f}${sig_ml}; {holm_str})",
+                va="center", fontsize=7.3, color="#1f77b4",
                 fontweight="bold" if ml_p <= 0.05 else "normal",
             )
 
-            y_w = y - 0.14
+            # Jointly Calibrated Scenario `worst` (bottom offset)
+            y_w = y - 0.15
             ax.errorbar(
                 [w_est], [y_w],
                 xerr=[[max(0.0, w_est - w_ci[0])], [max(0.0, w_ci[1] - w_est)]],
@@ -449,7 +385,7 @@ def plot_fig3_hypothesis_forest_plot():
                 ecolor="#ff7f0e",
                 elinewidth=1.5,
                 capsize=3.0,
-                markersize=5.2,
+                markersize=5.0,
                 alpha=0.9,
                 zorder=3,
             )
@@ -457,22 +393,21 @@ def plot_fig3_hypothesis_forest_plot():
             ax.text(
                 w_ci[1] + 0.8, y_w,
                 f"{w_est:+.2f} pt ($p={w_p:.4f}${sig_w})",
-                va="center", fontsize=7.5, color="#d95f02",
+                va="center", fontsize=7.1, color="#d95f02",
                 fontweight="bold" if w_p <= 0.05 else "normal",
             )
 
         ax.set_title(title, pad=8, fontsize=9.8)
         ax.set_xlabel("Accuracy Cost Advantage in Favor of Defense B (percentage points)")
-        ax.set_xlim(-22.0, 56.0)
+        ax.set_xlim(-19.5, 68.0)
         ax.set_yticks(y_positions)
         if p_idx == 0:
             ax.set_yticklabels([r[0] for r in rows], fontweight="bold")
 
-    # [BUGFIX] mlines.Line2Line2D does not exist; use mlines.Line2D
     ml_handle = mlines.Line2D(
         [], [], color="#1f77b4", marker="o", linestyle="-",
         linewidth=1.8, markersize=6,
-        label="Primary Calibrated Likelihood-Ratio Audit (Scenario ml)",
+        label="Primary Calibrated Likelihood-Ratio Audit (Scenario ml + Holm adjustment)",
     )
     w_handle = mlines.Line2D(
         [], [], color="#ff7f0e", marker="s", linestyle="-",
@@ -493,38 +428,6 @@ def plot_fig3_hypothesis_forest_plot():
         facecolor="white",
         edgecolor="#cccccc",
     )
-
-    # [REV 5] Add Holm-corrected p-values as an inset annotation.
-    # This makes the multiple-comparison correction visible in the figure.
-    holm_annotations = {
-        "H_tests": [
-            "MNIST H_s: Holm p = 0.796 (ns)",
-            "MNIST H_w: Holm p = 0.108 (ns)",
-            "CIFAR-10 H_s: Holm p = 0.063 (ns)",
-            "CIFAR-10 H_w: Holm p < 0.001 (***)",
-            "CIFAR-100 H_s: Holm p = 0.490 (ns)",
-            "CIFAR-100 H_w: Holm p = 0.681 (ns)",
-        ],
-        "DiD_tests": [
-            "MNIST DiD_s: Holm p = 0.0014 (**)",
-            "MNIST DiD_w: Holm p < 0.001 (***)",
-            "CIFAR-10 DiD_s: Holm p < 0.001 (***)",
-            "CIFAR-10 DiD_w: Holm p < 0.001 (***)",
-            "CIFAR-100 DiD_s: Holm p < 0.001 (***)",
-            "CIFAR-100 DiD_w: Holm p = 0.007 (**)",
-        ],
-    }
-    for p_idx, (key, _) in enumerate(panels):
-        ax = axes[p_idx]
-        for idx, annotation in enumerate(holm_annotations[key]):
-            y = y_positions[idx]
-            ax.text(
-                -20.5, y - 0.02,
-                annotation,
-                va="center", ha="left", fontsize=6.5,
-                color="#666666", style="italic",
-                transform=ax.get_yaxis_transform(),
-            )
 
     plt.tight_layout(rect=[0, 0, 1, 0.91])
     fig.savefig("fig3_hypothesis_forest_plot.pdf", bbox_inches="tight")
